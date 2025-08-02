@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>German Flashcards</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>German Flashcards</h1>
+    <div id="flashcard">
+      <p id="word">Press "Next" to start</p>
+    </div>
+    <div class="controls">
+      <button id="show-answer">Show Answer</button>
+      <button id="next">Next</button>
+      <button id="toggle-mode">Switch Mode</button>
+      <button id="manage-words">Word List</button>
+    </div>
+    <section id="word-manager" class="hidden">
+      <h2>Word List</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>German</th>
+            <th>English</th>
+          </tr>
+        </thead>
+        <tbody id="word-table-body"></tbody>
+      </table>
+      <form id="add-word-form">
+        <input type="text" id="new-german" placeholder="German word" required />
+        <input type="text" id="new-english" placeholder="English word" required />
+        <button type="submit">Add</button>
+      </form>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
