@@ -6,6 +6,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const wordsFile = path.join(__dirname, 'words.json');
 
+// Disable caching so clients always receive fresh data
+app.disable('etag');
+
 app.use(express.static(__dirname));
 app.use(express.json());
 
@@ -22,6 +25,7 @@ function writeWords(words) {
 }
 
 app.get('/api/words', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.json(readWords());
 });
 
