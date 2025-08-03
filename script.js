@@ -14,8 +14,14 @@ const newGermanInput = document.getElementById('new-german');
 const newEnglishInput = document.getElementById('new-english');
 
 async function fetchWords() {
-  const res = await fetch('/api/words');
-  words = await res.json();
+  try {
+    const res = await fetch('/api/words', { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to load words');
+    words = await res.json();
+  } catch (err) {
+    console.error(err);
+    words = [];
+  }
   renderWordList();
 }
 
