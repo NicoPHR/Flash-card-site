@@ -1,11 +1,4 @@
-const defaultWords = [
-  { de: 'Hallo', en: 'Hello' },
-  { de: 'Tschüss', en: 'Goodbye' },
-  { de: 'Hund', en: 'Dog' },
-  { de: 'Katze', en: 'Cat' }
-];
-
-let words = JSON.parse(localStorage.getItem('flashcards-words')) || defaultWords;
+let words = [];
 let currentMode = 'deToEn';
 let currentIndex = -1;
 
@@ -20,8 +13,10 @@ const addWordForm = document.getElementById('add-word-form');
 const newGermanInput = document.getElementById('new-german');
 const newEnglishInput = document.getElementById('new-english');
 
-function saveWords() {
-  localStorage.setItem('flashcards-words', JSON.stringify(words));
+async function fetchWords() {
+  const res = await fetch('/api/words');
+  words = await res.json();
+  renderWordList();
 }
 
 function renderWordList() {
@@ -64,19 +59,26 @@ toggleModeBtn.addEventListener('click', () => {
 });
 manageWordsBtn.addEventListener('click', () => {
   wordManagerSection.classList.toggle('hidden');
-  renderWordList();
+  if (!wordManagerSection.classList.contains('hidden')) {
+    fetchWords();
+  }
 });
-addWordForm.addEventListener('submit', e => {
+
+addWordForm.addEventListener('submit', async e => {
   e.preventDefault();
   const de = newGermanInput.value.trim();
   const en = newEnglishInput.value.trim();
   if (de && en) {
-    words.push({ de, en });
-    saveWords();
-    renderWordList();
+    await fetch('/api/words', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ de, en })
+    });
     newGermanInput.value = '';
     newEnglishInput.value = '';
+    await fetchWords();
+    showNextWord();
   }
 });
 
-showNextWord();
+fetchWords().then(showNextWord);
