@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>German Flashcards</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(238, 90, 36, 0.4);
+            margin: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.6);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        
+        #viewAnswerBtn {
+            background: linear-gradient(45deg, #4834d4, #667eea);
+            box-shadow: 0 4px 15px rgba(72, 52, 212, 0.4);
+        }
+        
+        #viewAnswerBtn:hover {
+            box-shadow: 0 6px 20px rgba(72, 52, 212, 0.6);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .word-pair {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .english, .german {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .english {
+            text-align: left;
+        }
+        
+        .german {
+            text-align: right;
+        }
+        
+        .german.hidden {
+            opacity: 0.3;
+            filter: blur(8px);
+            user-select: none;
+            pointer-events: none;
+        }
+        
+        .german.revealed {
+            opacity: 1;
+            filter: blur(0px);
+            transition: all 0.5s ease;
+        }
+        
+        .language-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .word {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .arrow {
+            font-size: 2rem;
+            opacity: 0.6;
+        }
+        
+        .error {
+            background: linear-gradient(45deg, #ff4757, #ff3742);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 480px) {
+            .word-pair {
+                flex-direction: column;
+            }
+            
+            .english, .german {
+                text-align: center;
+            }
+            
+            .arrow {
+                transform: rotate(90deg);
+            }
+            
+            .word {
+                font-size: 1.5rem;
+            }
+            
+            button {
+                width: 90%;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇩🇪 German Flashcards</h1>
+        
+        <button id="getWordBtn" onclick="getRandomWord()">
+            Get Random Word
+        </button>
+        
+        <button id="viewAnswerBtn" onclick="showAnswer()" style="display: none;">
+            View Answer
+        </button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let currentGermanWord = '';
+        let answerRevealed = false;
+
+        async function getRandomWord() {
+            const getWordBtn = document.getElementById('getWordBtn');
+            const viewAnswerBtn = document.getElementById('viewAnswerBtn');
+            const resultDiv = document.getElementById('result');
+            
+            // Reset state
+            answerRevealed = false;
+            viewAnswerBtn.style.display = 'none';
+            
+            // Show loading state
+            getWordBtn.disabled = true;
+            getWordBtn.innerHTML = '<span class="loading"></span> Loading...';
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('https://german-card-site-api.onrender.com/random');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                } else {
+                    currentGermanWord = data.german;
+                    resultDiv.innerHTML = `
+                        <div class="card">
+                            <div class="word-pair">
+                                <div class="english">
+                                    <div class="language-label">English</div>
+                                    <div class="word">${data.english}</div>
+                                </div>
+                                <div class="arrow">→</div>
+                                <div class="german hidden">
+                                    <div class="language-label">Deutsch</div>
+                                    <div class="word">???</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    // Show the "View Answer" button
+                    viewAnswerBtn.style.display = 'inline-block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Failed to fetch word. Please check if the API is running.</div>`;
+            } finally {
+                // Reset button
+                getWordBtn.disabled = false;
+                getWordBtn.innerHTML = 'Get Random Word';
+            }
+        }
+
+        function showAnswer() {
+            if (!answerRevealed && currentGermanWord) {
+                const germanDiv = document.querySelector('.german');
+                const germanWordDiv = document.querySelector('.german .word');
+                
+                germanWordDiv.textContent = currentGermanWord;
+                germanDiv.classList.remove('hidden');
+                germanDiv.classList.add('revealed');
+                
+                // Hide the "View Answer" button
+                const viewAnswerBtn = document.getElementById('viewAnswerBtn');
+                viewAnswerBtn.style.display = 'none';
+                
+                answerRevealed = true;
+            }
+        }
+    </script>
+</body>
+</html>
