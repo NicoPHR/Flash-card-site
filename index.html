@@ -31,6 +31,50 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
+        .toggle-container {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .toggle-label {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .toggle-switch.active {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
+        
         button {
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             color: white;
@@ -105,14 +149,14 @@
             text-align: right;
         }
         
-        .german.hidden {
+        .hidden-answer {
             opacity: 0.3;
             filter: blur(8px);
             user-select: none;
             pointer-events: none;
         }
         
-        .german.revealed {
+        .revealed-answer {
             opacity: 1;
             filter: blur(0px);
             transition: all 0.5s ease;
@@ -178,12 +222,25 @@
                 width: 90%;
                 margin: 5px;
             }
+            
+            .toggle-container {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🇩🇪 German Flashcards</h1>
+        
+        <div class="toggle-container">
+            <div class="toggle-label">EN → DE</div>
+            <div class="toggle-switch" id="languageToggle" onclick="toggleLanguageOrder()">
+                <div class="toggle-slider"></div>
+            </div>
+            <div class="toggle-label">DE → EN</div>
+        </div>
         
         <button id="getWordBtn" onclick="getRandomWord()">
             Get Random Word
@@ -197,8 +254,70 @@
     </div>
 
     <script>
+        let currentEnglishWord = '';
         let currentGermanWord = '';
         let answerRevealed = false;
+        let showGermanFirst = false; // false = English first, true = German first
+
+        function toggleLanguageOrder() {
+            const toggle = document.getElementById('languageToggle');
+            showGermanFirst = !showGermanFirst;
+            
+            if (showGermanFirst) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+            
+            // If there's already a word displayed, update the display
+            if (currentEnglishWord && currentGermanWord) {
+                displayWordPair(currentEnglishWord, currentGermanWord);
+            }
+        }
+
+        function displayWordPair(english, german) {
+            const resultDiv = document.getElementById('result');
+            const viewAnswerBtn = document.getElementById('viewAnswerBtn');
+            
+            answerRevealed = false;
+            viewAnswerBtn.style.display = 'inline-block';
+            
+            if (showGermanFirst) {
+                // Show German first, hide English
+                resultDiv.innerHTML = `
+                    <div class="card">
+                        <div class="word-pair">
+                            <div class="german">
+                                <div class="language-label">Deutsch</div>
+                                <div class="word">${german}</div>
+                            </div>
+                            <div class="arrow">→</div>
+                            <div class="english hidden-answer">
+                                <div class="language-label">English</div>
+                                <div class="word">???</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Show English first, hide German (original behavior)
+                resultDiv.innerHTML = `
+                    <div class="card">
+                        <div class="word-pair">
+                            <div class="english">
+                                <div class="language-label">English</div>
+                                <div class="word">${english}</div>
+                            </div>
+                            <div class="arrow">→</div>
+                            <div class="german hidden-answer">
+                                <div class="language-label">Deutsch</div>
+                                <div class="word">???</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
 
         async function getRandomWord() {
             const getWordBtn = document.getElementById('getWordBtn');
@@ -221,24 +340,9 @@
                 if (data.error) {
                     resultDiv.innerHTML = `<div class="error">❌ ${data.error}</div>`;
                 } else {
+                    currentEnglishWord = data.english;
                     currentGermanWord = data.german;
-                    resultDiv.innerHTML = `
-                        <div class="card">
-                            <div class="word-pair">
-                                <div class="english">
-                                    <div class="language-label">English</div>
-                                    <div class="word">${data.english}</div>
-                                </div>
-                                <div class="arrow">→</div>
-                                <div class="german hidden">
-                                    <div class="language-label">Deutsch</div>
-                                    <div class="word">???</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    // Show the "View Answer" button
-                    viewAnswerBtn.style.display = 'inline-block';
+                    displayWordPair(data.english, data.german);
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -251,13 +355,24 @@
         }
 
         function showAnswer() {
-            if (!answerRevealed && currentGermanWord) {
-                const germanDiv = document.querySelector('.german');
-                const germanWordDiv = document.querySelector('.german .word');
-                
-                germanWordDiv.textContent = currentGermanWord;
-                germanDiv.classList.remove('hidden');
-                germanDiv.classList.add('revealed');
+            if (!answerRevealed && currentEnglishWord && currentGermanWord) {
+                if (showGermanFirst) {
+                    // Reveal English answer
+                    const englishDiv = document.querySelector('.english');
+                    const englishWordDiv = document.querySelector('.english .word');
+                    
+                    englishWordDiv.textContent = currentEnglishWord;
+                    englishDiv.classList.remove('hidden-answer');
+                    englishDiv.classList.add('revealed-answer');
+                } else {
+                    // Reveal German answer (original behavior)
+                    const germanDiv = document.querySelector('.german');
+                    const germanWordDiv = document.querySelector('.german .word');
+                    
+                    germanWordDiv.textContent = currentGermanWord;
+                    germanDiv.classList.remove('hidden-answer');
+                    germanDiv.classList.add('revealed-answer');
+                }
                 
                 // Hide the "View Answer" button
                 const viewAnswerBtn = document.getElementById('viewAnswerBtn');
