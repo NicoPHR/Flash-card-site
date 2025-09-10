@@ -500,38 +500,35 @@
                 return;
             }
             
+            // Store the current card ID for the background API call
+            const cardIdToUpdate = currentCardId;
+            
+            // Immediately show the next card (no waiting)
+            await getRandomWord();
+            
+            // Send API call in the background (fire-and-forget)
+            sendDifficultyUpdate(cardIdToUpdate, difficulty);
+        }
+
+        // Background function to handle the API call
+        async function sendDifficultyUpdate(cardId, difficulty) {
             try {
-                // Disable difficulty buttons during API call
-                const buttons = document.querySelectorAll('.difficulty-btn');
-                buttons.forEach(btn => btn.disabled = true);
-                
-                const response = await fetch(`${API_BASE_URL}/cards/${currentCardId}/difficulty/${difficulty}`, {
+                const response = await fetch(`${API_BASE_URL}/cards/${cardId}/difficulty/${difficulty}`, {
                     method: 'POST'
                 });
                 
                 if (response.ok) {
                     const result = await response.json();
-                    console.log(`Card marked as ${difficulty}:`, result);
-                    // Re-enable buttons before getting next card
-                    buttons.forEach(btn => btn.disabled = false);
-                    // Automatically show next card
-                    await getRandomWord();
+                    console.log(`Card ${cardId} marked as ${difficulty}:`, result);
                 } else {
-                    throw new Error(`API returned ${response.status}`);
+                    console.error(`Failed to update card ${cardId}: ${response.status}`);
                 }
                 
             } catch (error) {
-                console.error('Error setting difficulty:', error);
-                
-                // Re-enable buttons on error
-                const buttons = document.querySelectorAll('.difficulty-btn');
-                buttons.forEach(btn => btn.disabled = false);
-                
-                // Show error message
-                const resultDiv = document.getElementById('result');
-                resultDiv.innerHTML += `<div class="error">❌ Failed to save difficulty. Please try again.</div>`;
+                console.error(`Error updating card ${cardId}:`, error);
             }
         }
+        
     </script>
 </body>
 </html>
